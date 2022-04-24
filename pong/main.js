@@ -6,12 +6,13 @@
     this.game_over = false;
     this.bars = [];
     this.ball = null;
+    this.playing = false;
   };
 
   self.Board.prototype = {
     get elements() {
-      var elements = this.bars;
-      //elements.push(this.ball);
+        var elements = this.bars.map(function(bar){return bar;});
+        elements.push(this.ball);
       return elements;
     },
   };
@@ -25,10 +26,20 @@
     this.speed_y = 0;
     this.speed_x = 3;
     this.board = board;
+    this.direction = 1;
 
     board.ball = this;
     this.kind = 'circle';
-  };
+  }
+  self.Ball.prototype = {
+    move: function(){
+        this.x += (this.speed_x * this.direction);
+        this.y += (this.speed_y);
+    },
+    collisions: function(bar){
+        //reacciona a la colision con una barra que recibe como parametro
+    }
+}
 })();
 
 (function () {
@@ -75,11 +86,47 @@
         draw(this.ctx, el);
       }
     },
+    check_collisions: function(){
+        for (var i = this.board.bars.length - 1; i >= 0; 0--){
+            var bar = this.board.bars[i];
+            if(history(bar, this.board.ball)){
+                this.board.ball.check_collisions(bar);
+            }
+        };
+    },
     play: function () {
-      this.clean();
-      this.draw();
+        if (this.board.playing){
+            this.clean();
+            this.draw();
+            this.board.ball.move();
+        }
     },
   };
+
+  function hit(a,b){
+    //Revisa si a colisiona con b
+    var hit = false;
+
+    if(b.x + b.width >= a.x && b.x < a.x + a.width )
+    {
+        if(b.x + b.height >= a.y && b.y < a.y + a.height ){
+            hit = true;
+        }
+    }
+    if (b.x <= a.x && b.x + b.width  >= a.x + a.width)
+    {
+        if(b.y <= a.y && b.y + b.height  >= a.y + a.height)
+        {
+            hit = true;
+        }
+    }
+    if (a.x <= b.x && a.x + a.width >= b.x + b.width) {
+        if (a.y <= b.y && a.y + a.height >= b.y + b.height) {
+            hit = true;
+        }
+    }
+    return hit;
+}
 
   function draw(ctx, element) {
     switch (element.kind) {
@@ -106,18 +153,25 @@ var ball = new Ball(350, 100, 10, board);
 document.addEventListener('keydown', function (ev) {
   ev.preventDefault();
   if (ev.keyCode == 38) {
+    ev.preventDefault();
     bar.up();
   } else if (ev.keyCode == 40) {
+    ev.preventDefault();
     bar.down();
   } else if (ev.keyCode == 87) {
+    ev.preventDefault();
     //w
     bar_2.up();
   } else if (ev.keyCode == 83) {
+    ev.preventDefault();
     //s
     bar_2.down();
-  }
+  } else if(ev.keyCode === 32){
+    ev.preventDefault();
+    board.playing = !board.playing;
+}
 });
-
+board_view.draw();
 window.requestAnimationFrame(controller);
 
 function controller() {
